@@ -3,7 +3,8 @@ use {
     std::{fs::read_to_string, io::Error, path::Path},
 };
 
-pub struct ReadBuilder<'a> {
+/// Object to read data from a file with all required parameters.
+pub struct Reader<'a> {
     file: &'a str,
     separator: &'a str,
     line: &'a str,
@@ -12,50 +13,63 @@ pub struct ReadBuilder<'a> {
     by_columns: bool,
 }
 
-impl<'a> ReadBuilder<'a> {
-    pub fn new(file: &str, headers: usize) -> ReadBuilder {
-        ReadBuilder {
+impl<'a> Reader<'a> {
+    /// Constructs a new Reader with some default values that can be changed.
+    pub fn new(file: &str, headers: usize) -> Reader {
+        Reader {
             file,
             separator: "\t",
             line: "\n",
             decimal: ",",
             headers,
-            by_columns: true
+            by_columns: true,
         }
     }
-
+    /// Character separating the columns in a row, by default "\t".
     pub fn separator(mut self, separator: &'a str) -> Self {
         self.separator = separator;
         self
     }
-    
+    /// Character separating rows, by default "\n".
     pub fn line(mut self, line: &'a str) -> Self {
         self.line = line;
         self
     }
-    
+    /// Decimal separator, "," by default.
     pub fn decimal(mut self, decimal: &'a str) -> Self {
         self.decimal = decimal;
         self
     }
-    
+    /// Changes how to read the data, false for horizontal and true for vertical,
+    /// true by default.
     pub fn by_columns(mut self, by_columns: bool) -> Self {
         self.by_columns = by_columns;
         self
     }
-
-    pub fn read_file(self) ->  Result<Vec<Vec<Option<f64>>>, Error> {
-        read_file(self.file, self.separator, self.line, self.decimal, self.headers, self.by_columns)
+    /// Extracts data from a file with csv format or similar.
+    pub fn read_file(self) -> Result<Vec<Vec<Option<f64>>>, Error> {
+        read_file(
+            self.file,
+            self.separator,
+            self.line,
+            self.decimal,
+            self.headers,
+            self.by_columns,
+        )
     }
-    
-    pub fn read_to_measures(self) ->  Result<Vec<Measure>, Error> {
-        read_to_measures(self.file, self.separator, self.line, self.decimal, self.headers)
+    /// Extracts data from a file creating measures by asuming each pair of columns
+    /// correspond to the value and error of a measure.
+    pub fn read_to_measures(self) -> Vec<Measure> {
+        read_to_measures(
+            self.file,
+            self.separator,
+            self.line,
+            self.decimal,
+            self.headers,
+        ).unwrap()
     }
-
 }
 
-
-/// Extracts data from a file with csv format or similar.
 fn read_file(
     file: &str,
     separator: &str,
@@ -117,9 +131,6 @@ fn read_file(
 
     Ok(data)
 }
-
-/// Extracts data from a file creating measures by asuming each pair of columns
-/// correspond to the value and error of a measure.
 
 fn read_to_measures(
     file: &str,

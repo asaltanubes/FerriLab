@@ -1,6 +1,8 @@
 use crate::objects::{Measure, Style};
 
-pub struct TableBuilder<'a> {
+/// Object to create a table with all required parameters, either in latex or
+/// typst format.
+pub struct Table<'a> {
     data: Vec<Measure>,
     header: Vec<&'a str>,
     transpose: bool,
@@ -8,9 +10,10 @@ pub struct TableBuilder<'a> {
     label: &'a str,
 }
 
-impl<'a> TableBuilder<'a> {
-    pub fn new(data: Vec<Measure>, header: Vec<&str>) -> TableBuilder {
-        TableBuilder {
+impl<'a> Table<'a> {
+    /// Constructs a new Table with some default values that can be changed.
+    pub fn new(data: Vec<Measure>, header: Vec<&str>) -> Table {
+        Table {
             data,
             header,
             transpose: true,
@@ -18,60 +21,92 @@ impl<'a> TableBuilder<'a> {
             label: "label",
         }
     }
-
+    /// Changes table disposal, true for vertical and false for horizontal, by
+    /// default is set to true.
     pub fn transpose(mut self, transpose: bool) -> Self {
         self.transpose = transpose;
         self
     }
-    
+    /// Set a caption for latex table, "caption" by default.
     pub fn caption(mut self, caption: &'a str) -> Self {
         self.caption = caption;
         self
     }
-    
+    /// Set a label for latex table, "label" by default.
     pub fn label(mut self, label: &'a str) -> Self {
         self.label = label;
         self
     }
-
+    /// Creates a table using your measures in typst format.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ferrilab::{measure, Measure, tables::typst};
+    /// let time = measure!([0.2, 0.3, 0.40, 0.5], [0.01, 0.02, 0.02, 0.04]);
+    /// let position = measure!([2.4, 3.4, 5.1, 7.2], [0.2, 0.4, 0.5, 0.8]);
+    /// let speed = &position / &time;
+    ///
+    /// println!("{}", typst(vec![time, position, speed], vec!["t/s", "x/m", "v/ms-1"], true))
+    ///
+    /// // Output
+    ///
+    /// /*
+    /// table(
+    ///     columns: 3,
+    ///     align: center,
+    ///         [t/s], [x/m], [v/ms-1]
+    ///         [$0.2 plus.minus 0.01$], [$2.4 plus.minus 0.2$], [$2.6 plus.minus 0.2$]
+    ///         [$0.3 plus.minus 0.02$], [$3.4 plus.minus 0.4$], [$3.7 plus.minus 0.4$]
+    ///         [$0.4 plus.minus 0.02$], [$5.1 plus.minus 0.5$], [$5.5 plus.minus 0.5$]
+    ///         [$0.5 plus.minus 0.04$], [$7.2 plus.minus 0.8$], [$7.7 plus.minus 0.8$]
+    /// )
+    ///  */
+    /// ```
     pub fn typst(self) -> String {
         typst(self.data, self.header, self.transpose)
     }
-
+    /// Creates a table using your measures in latex format.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ferrilab::{measure, Measure, tables::latex};
+    /// let time = measure!([0.2, 0.3, 0.40, 0.5], [0.01, 0.02, 0.02, 0.04]);
+    /// let position = measure!([2.4, 3.4, 5.1, 7.2], [0.2, 0.4, 0.5, 0.8]);
+    /// let speed = &position / &time;
+    ///
+    /// println!("{}", latex(vec![time, position, speed], vec!["t/s", "x/m", "v/ms-1"], "Caption", "label", true))
+    ///
+    /// // Output
+    ///
+    /// /*
+    /// \begin{table}[ht]
+    ///     \centering
+    ///     \caption{Caption}
+    ///     \label{label}
+    ///         \begin{tabular}{|c|c|c|}
+    ///             t/s & x/m & v/ms-1\\
+    ///             $0.2 \pm 0.01$ & $2.4 \pm 0.2$ & $2.6 \pm 0.2$\\
+    ///             $0.3 \pm 0.02$ & $3.4 \pm 0.4$ & $3.7 \pm 0.4$\\
+    ///             $0.4 \pm 0.02$ & $5.1 \pm 0.5$ & $5.5 \pm 0.5$\\
+    ///             $0.5 \pm 0.04$ & $7.2 \pm 0.8$ & $7.7 \pm 0.8$\\
+    ///        \end{tabular}
+    /// \end{table}
+    ///  */
+    /// ```
     pub fn latex(self) -> String {
-        latex(self.data, self.header, self.caption, self.label, self.transpose)
+        latex(
+            self.data,
+            self.header,
+            self.caption,
+            self.label,
+            self.transpose,
+        )
     }
-
 }
 
-/// Creates a table using your measures in typst format.
-///
-/// # Examples
-///
-/// ```rust
-/// # use ferrilab::{measure, Measure, tables::typst};
-/// let time = measure!([0.2, 0.3, 0.40, 0.5], [0.01, 0.02, 0.02, 0.04]);
-/// let position = measure!([2.4, 3.4, 5.1, 7.2], [0.2, 0.4, 0.5, 0.8]);
-/// let speed = &position / &time;
-///
-/// println!("{}", typst(vec![time, position, speed], vec!["t/s", "x/m", "v/ms-1"], true))
-///
-/// // Output
-///
-/// /*
-/// table(
-///     columns: 3,
-///     align: center,
-///         [t/s], [x/m], [v/ms-1]
-///         [$0.2 plus.minus 0.01$], [$2.4 plus.minus 0.2$], [$2.6 plus.minus 0.2$]
-///         [$0.3 plus.minus 0.02$], [$3.4 plus.minus 0.4$], [$3.7 plus.minus 0.4$]
-///         [$0.4 plus.minus 0.02$], [$5.1 plus.minus 0.5$], [$5.5 plus.minus 0.5$]
-///         [$0.5 plus.minus 0.04$], [$7.2 plus.minus 0.8$], [$7.7 plus.minus 0.8$]
-/// )
-///  */
-/// ```
-
-pub fn typst(data: Vec<Measure>, header: Vec<&str>, transpose: bool) -> String {
+fn typst(data: Vec<Measure>, header: Vec<&str>, transpose: bool) -> String {
     let mut data = create_table_list(data, header, transpose, Style::TypstTable);
 
     data = data
@@ -93,36 +128,7 @@ pub fn typst(data: Vec<Measure>, header: Vec<&str>, transpose: bool) -> String {
     )
 }
 
-/// Creates a table using your measures in latex format.
-///
-/// # Examples
-///
-/// ```rust
-/// # use ferrilab::{measure, Measure, tables::latex};
-/// let time = measure!([0.2, 0.3, 0.40, 0.5], [0.01, 0.02, 0.02, 0.04]);
-/// let position = measure!([2.4, 3.4, 5.1, 7.2], [0.2, 0.4, 0.5, 0.8]);
-/// let speed = &position / &time;
-///
-/// println!("{}", latex(vec![time, position, speed], vec!["t/s", "x/m", "v/ms-1"], "Caption", "label", true))
-///
-/// // Output
-///
-/// /*
-/// \begin{table}[ht]
-///     \centering
-///     \caption{Caption}
-///     \label{label}
-///         \begin{tabular}{|c|c|c|}
-///             t/s & x/m & v/ms-1\\
-///             $0.2 \pm 0.01$ & $2.4 \pm 0.2$ & $2.6 \pm 0.2$\\
-///             $0.3 \pm 0.02$ & $3.4 \pm 0.4$ & $3.7 \pm 0.4$\\
-///             $0.4 \pm 0.02$ & $5.1 \pm 0.5$ & $5.5 \pm 0.5$\\
-///             $0.5 \pm 0.04$ & $7.2 \pm 0.8$ & $7.7 \pm 0.8$\\
-///        \end{tabular}
-/// \end{table}
-///  */
-/// ```
-pub fn latex(
+fn latex(
     data: Vec<Measure>,
     header: Vec<&str>,
     caption: &str,
