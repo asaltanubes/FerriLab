@@ -1,8 +1,8 @@
 use crate::Measure;
 
-/// Object to create a curve fit with all required parameters.
+/// Object to create a CurveFit with all required parameters.
 #[derive(Debug, Clone)]
-pub struct FitBuilder<F: Fn(&f64, &[f64]) -> f64> {
+pub struct CurveFit<F: Fn(&f64, &[f64]) -> f64> {
     model: F,
     x_values: Vec<f64>,
     y_values: Vec<f64>,
@@ -13,12 +13,12 @@ pub struct FitBuilder<F: Fn(&f64, &[f64]) -> f64> {
     initial_simplex_scale: f64,
 }
 
-impl<F: Fn(&f64, &[f64]) -> f64> FitBuilder<F> {
-    /// Constructs a new FitBuilder with some default values that can be changed.
+impl<F: Fn(&f64, &[f64]) -> f64> CurveFit<F> {
+    /// Constructs a new CurveFit with some default values that can be changed.
     pub fn new(model: F, x_values: impl Into<Vec<f64>>, y_values: impl Into<Vec<f64>>) -> Self {
         let x_values = x_values.into();
         let n = x_values.len();
-        FitBuilder {
+        CurveFit {
             model,
             x_values,
             y_values: y_values.into(),
@@ -34,7 +34,7 @@ impl<F: Fn(&f64, &[f64]) -> f64> FitBuilder<F> {
         self.initial_point = initial_point.into();
         self
     }
-
+    /// If passed, calculates the weigthed curve fit considaring the y error.
     pub fn y_error(mut self, yerr: Vec<f64>) -> Self {
         self.yerr = yerr;
         self
@@ -65,7 +65,7 @@ impl<F: Fn(&f64, &[f64]) -> f64> FitBuilder<F> {
         self
     }
     /// Generates n+1 points using the initial one for calculating the curve
-    /// fit, by default 0.5. 
+    /// fit, by default 0.5.
     /// If the scale is a lot smaller than the expected value of the coeficients
     /// it may result in errors in the fit.
     pub fn initial_simplex_scale(mut self, scale: impl Into<f64>) -> Self {
@@ -75,9 +75,9 @@ impl<F: Fn(&f64, &[f64]) -> f64> FitBuilder<F> {
 
     /// Takes the arbitrary function and aproximates to the curve using
     /// every parameter established.
-    pub fn fit(self) -> Vec<Measure> {
+    pub fn fit(&self) -> Vec<Measure> {
         curve_fit(
-            self.model,
+            &self.model,
             &self.x_values,
             &self.y_values,
             &self.yerr,
@@ -87,42 +87,91 @@ impl<F: Fn(&f64, &[f64]) -> f64> FitBuilder<F> {
             self.initial_simplex_scale,
         )
     }
+
+    pub fn r_value(&self) -> f64 {
+        let parameters = self.fit();
+        let ss_res = self
+            .x_values
+            .iter()
+            .zip(self.y_values.iter())
+            .map(|(x, y)| {
+                y - (self.model)(
+                    x,
+                    &parameters
+                        .iter()
+                        .map(|par| par.value()[0])
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .map(|r| r.powi(2))
+            .sum::<f64>();
+
+        let ss_total = self
+            .y_values
+            .iter()
+            .map(|yi| {
+                (yi - self.y_values.iter().sum::<f64>() / (self.y_values.len() as f64)).powi(2)
+            })
+            .sum::<f64>();
+
+        (1.0 - (ss_res / ss_total)).sqrt()
+    }
 }
 
-/// Calculates the coeficient of linear correlation
-pub fn r_value(x: impl Into<Vec<f64>>, y: impl Into<Vec<f64>>) -> f64 {
-    let x = x.into();
-    let y = y.into();
-
-    assert_eq!(
-        x.len(),
-        y.len(),
-        "Expected x and y vectors to be the same length, got x.len() = {}, y.len() = {}",
-        x.len(),
-        y.len()
-    );
-    let x_mean = x.iter().sum::<f64>() / (x.len() as f64);
-    let y_mean = y.iter().sum::<f64>() / (y.len() as f64);
-    let x_deviation: Vec<f64> = x.iter().map(|val| val - x_mean).collect();
-    let y_deviation: Vec<f64> = y.iter().map(|val| val - y_mean).collect();
-    let sigma_x = x_deviation.iter().map(|val| val.powi(2)).sum::<f64>();
-    let sigma_y = y_deviation.iter().map(|val| val.powi(2)).sum::<f64>();
-
-    x_deviation
-        .into_iter()
-        .zip(y_deviation)
-        .map(|(xd, yd)| xd * yd)
-        .sum::<f64>()
-        / (sigma_x * sigma_y).sqrt()
+/// Object to create a LinearFit with all required parameters.
+#[derive(Debug, Clone)]
+pub struct LinearFit {
+    x_values: Vec<f64>,
+    y_values: Vec<f64>,
+    yerr: Option<Vec<f64>>,
 }
+
+impl LinearFit {
+    /// Constructs a new LinearFit with some default values that can be changed.
+    pub fn new(x_values: impl Into<Vec<f64>>, y_values: impl Into<Vec<f64>>) -> Self {
+        LinearFit {
+            x_values: x_values.into(),
+            y_values: y_values.into(),
+            yerr: None,
+        }
+    }
+    /// If passed, calculates the weigthed curve fit considaring the y error.
+    pub fn y_error(mut self, yerr: Vec<f64>) -> Self {
+        self.yerr = Some(yerr);
+        self
+    }
+
+    /// Given the x and y values returns the slope and the intercept of a
+    /// straight line by least squares method or weighted least squares method
+    /// if yerr is given.
+    pub fn fit(&self) -> (Measure, Measure) {
+        if let Some(yerr) = &self.yerr {
+            wlinear_fit(&self.x_values, &self.y_values, yerr)
+        } else {
+            linear_fit(&self.x_values, &self.y_values)
+        }
+    }
+    /// Calculates the coeficient of linear correlation
+    pub fn r_value(&self) -> f64 {
+        let x_mean = self.x_values.iter().sum::<f64>() / (self.x_values.len() as f64);
+        let y_mean = self.y_values.iter().sum::<f64>() / (self.y_values.len() as f64);
+        let x_deviation: Vec<f64> = self.x_values.iter().map(|val| val - x_mean).collect();
+        let y_deviation: Vec<f64> = self.y_values.iter().map(|val| val - y_mean).collect();
+        let sigma_x = x_deviation.iter().map(|val| val.powi(2)).sum::<f64>();
+        let sigma_y = y_deviation.iter().map(|val| val.powi(2)).sum::<f64>();
+
+        x_deviation
+            .into_iter()
+            .zip(y_deviation)
+            .map(|(xd, yd)| xd * yd)
+            .sum::<f64>()
+            / (sigma_x * sigma_y).sqrt()
+    }
+}
+
 // ------------- Linear fit and Weigthed linear fit -------------
 
-/// Given the x and y values returns the slope and the intercept of a straight line
-/// by least squares method.
-pub fn linear_fit(x: impl Into<Vec<f64>>, y: impl Into<Vec<f64>>) -> (Measure, Measure) {
-    let x = x.into();
-    let y = y.into();
-
+fn linear_fit(x: &[f64], y: &[f64]) -> (Measure, Measure) {
     assert_eq!(
         x.len(),
         y.len(),
@@ -156,17 +205,7 @@ pub fn linear_fit(x: impl Into<Vec<f64>>, y: impl Into<Vec<f64>>) -> (Measure, M
     (slope, n0)
 }
 
-/// Given the x and y values returns the slope and the intercept of a straight line
-/// by weighted least squares method.
-pub fn wlinear_fit(
-    x: impl Into<Vec<f64>>,
-    y: impl Into<Vec<f64>>,
-    yerr: impl Into<Vec<f64>>,
-) -> (Measure, Measure) {
-    let x = x.into();
-    let y = y.into();
-    let yerr = yerr.into();
-
+fn wlinear_fit(x: &[f64], y: &[f64], yerr: &[f64]) -> (Measure, Measure) {
     assert_eq!(
         x.len(),
         y.len(),
@@ -207,7 +246,7 @@ pub fn wlinear_fit(
 // ------------------------- Curve fit -------------------------
 
 fn curve_fit<F>(
-    model: F,
+    model: &F,
     x: &[f64],
     y: &[f64],
     yerr: &[f64],
@@ -235,7 +274,7 @@ where
             .sum()
     };
     let result = nelder_mead(
-        objective_function,
+        &objective_function,
         initial_point,
         max_iterations,
         tol,
@@ -290,7 +329,7 @@ fn generate_initial_simplex(initial_point: &[f64], scale: f64) -> Vec<Vec<f64>> 
 }
 
 fn nelder_mead<F>(
-    f: F,
+    f: &F,
     initial_point: &[f64],
     max_iterations: Option<usize>,
     tol: f64,
