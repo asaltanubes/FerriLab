@@ -28,19 +28,18 @@
 //! ```
 
 mod aprox;
-pub mod fit;
+mod fit;
 mod macros;
-pub mod objects;
-pub mod plot;
-pub mod reader;
-pub mod tables;
+mod objects;
+mod plot;
+mod reader;
+mod tables;
 
 #[doc(inline)]
-pub use objects::Measure;
-
-// pub use {
-//     objects::{Measure, Style},
-//     fit::{linear_fit, wlinear_fit, FitBuilder},
-//     reader::{read_file, read_to_measures},
-//     tables::{latex, typst},
-// };
+pub use {
+    fit::{CurveFit, LinearFit},
+    objects::Measure,
+    reader::Reader,
+    tables::Table,
+    plot::{},
+};
