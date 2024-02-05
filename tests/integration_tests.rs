@@ -1,7 +1,4 @@
-use ferrilab::{
-    fit::{linear_fit, wlinear_fit, FitBuilder},
-    measure, Measure,
-};
+use ferrilab::{measure, CurveFit, LinearFit, Measure};
 
 #[test]
 fn macro_test() {
@@ -147,29 +144,29 @@ fn operations() {
 
 fn fit_test() {
     assert_eq!(
-        linear_fit([0.7, 1.8, 2.7, 4.3], [4.6, 5.4, 6.9, 8.1]),
+        LinearFit::new([0.7, 1.8, 2.7, 4.3], [4.6, 5.4, 6.9, 8.1]).fit(),
         (
             measure!(1.0111550917596268, 0.1158958350259736; false),
             measure!(3.8485066570708875, 0.31479109479486966; false)
         )
     );
     assert_eq!(
-        wlinear_fit(
-            [0.7, 1.8, 2.7, 4.3],
-            [4.6, 5.4, 6.9, 8.1],
-            [0.1, 0.3, 0.4, 0.7]
-        ),
+        LinearFit::new([0.7, 1.8, 2.7, 4.3], [4.6, 5.4, 6.9, 8.1],)
+            .y_error(vec![0.1, 0.3, 0.4, 0.7])
+            .fit(),
         (
             measure!(0.9963598861989915, 0.13329751086990216; false),
             measure!(3.8896028985935134, 0.15825404095614476; false)
         )
     );
     assert_eq!(
-        FitBuilder::new(
+        CurveFit::new(
             |x, coefs| coefs[0] * (-x * coefs[1]).exp(),
             [0.042, 0.2, 0.33, 0.6],
             [1.6, 1.25, 0.8, 0.34]
-        ).add_zeros_initial_point(2).fit(),
+        )
+        .initial_zeros(2)
+        .fit(),
         vec![
             measure!(1.8368313871324062, 0.1339378128643651; false),
             measure!(2.4591460197698325, 0.35963907104421394; false)
