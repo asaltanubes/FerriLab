@@ -1,29 +1,20 @@
 use std::default::Default;
+use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyDict};
-
-fn main() {
-    scatter(vec![1.0, 2.0], vec![1.0, 2.0], ScatterConfig{color: "tab:blue".into(), yerrorbar: Some(vec![0.1, 0.3]), fill: false, ..Default::default()});
-    plot(vec![1.0, 2.0], [1.0, 2.0], PlotConfig::default());
-    Python::with_gil(|py|{
-        let plt = PyModule::import(py, "matplotlib.pyplot").unwrap();
-        plt.getattr("show").unwrap().call0();
-    })
-    
-}
 
 // Scatter
 #[derive(Debug, Clone)]
-struct ScatterConfig{
-    color: String,
-    fill: bool,
-    marker: String,
-    size: usize,
-    label: Option<String>,
-    zorder: i32,
-    xerrorbar: Option<Vec<f64>>,
-    yerrorbar: Option<Vec<f64>>,
-    errorbarcolor: String,
-    barzorder: i32,
+pub struct ScatterConfig{
+    pub color: String,
+    pub fill: bool,
+    pub marker: String,
+    pub size: usize,
+    pub label: Option<String>,
+    pub zorder: i32,
+    pub xerrorbar: Option<Vec<f64>>,
+    pub yerrorbar: Option<Vec<f64>>,
+    pub errorbarcolor: String,
+    pub barzorder: i32,
 }
 
 impl Default for ScatterConfig{
@@ -67,7 +58,7 @@ impl ScatterConfig {
     }
 }
 
-fn scatter(x: impl Into<Vec<f64>>, y: impl Into<Vec<f64>>, conf: ScatterConfig) -> PyResult<()>{
+pub fn scatter(x: impl Into<Vec<f64>>, y: impl Into<Vec<f64>>, conf: ScatterConfig) -> PyResult<()>{
     Python::with_gil(|py| {
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         let x = x.into();
@@ -81,12 +72,12 @@ fn scatter(x: impl Into<Vec<f64>>, y: impl Into<Vec<f64>>, conf: ScatterConfig) 
 
 // Plot
 #[derive(Debug, Clone)]
-struct PlotConfig{
-    color: String,
-    linestyle: String,
-    linewidth: usize,
-    label: Option<String>,
-    zorder: i32,
+pub struct PlotConfig{
+    pub color: String,
+    pub linestyle: String,
+    pub linewidth: usize,
+    pub label: Option<String>,
+    pub zorder: i32,
 }
 
 impl Default for PlotConfig{
@@ -113,7 +104,7 @@ impl PlotConfig{
     }
 }
 
-fn plot(x: impl Into<Vec<f64>>, y: impl Into<Vec<f64>>, conf: PlotConfig) -> PyResult<()>{
+pub fn plot(x: impl Into<Vec<f64>>, y: impl Into<Vec<f64>>, conf: PlotConfig) -> PyResult<()>{
     Python::with_gil(|py| {
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         let x = x.into();
@@ -125,7 +116,7 @@ fn plot(x: impl Into<Vec<f64>>, y: impl Into<Vec<f64>>, conf: PlotConfig) -> PyR
 
 
 
-fn legend() -> PyResult<()>{
+pub fn legend() -> PyResult<()>{
     Python::with_gil(|py| {
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         plt.getattr("legend")?.call0()?;
@@ -135,8 +126,8 @@ fn legend() -> PyResult<()>{
 
 
 #[derive(Debug, Clone, Copy)]
-struct LabelConfig{
-    fontsize: usize,
+pub struct LabelConfig{
+    pub fontsize: usize,
 }
 
 impl Default for LabelConfig{
@@ -153,7 +144,7 @@ impl LabelConfig{
     }
 }
 
-fn xlabel(text: impl Into<String>, conf: LabelConfig) -> PyResult<()>{
+pub fn xlabel(text: impl Into<String>, conf: LabelConfig) -> PyResult<()>{
     Python::with_gil(|py|{
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         plt.getattr("xlabel")?.call((text.into(), ), Some(conf.label_conf(py)?))?;
@@ -161,7 +152,7 @@ fn xlabel(text: impl Into<String>, conf: LabelConfig) -> PyResult<()>{
     })
 }
 
-fn ylabel(text: impl Into<String>, conf: LabelConfig) -> PyResult<()>{
+pub fn ylabel(text: impl Into<String>, conf: LabelConfig) -> PyResult<()>{
     Python::with_gil(|py|{
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         plt.getattr("ylabel")?.call((text.into(), ), Some(conf.label_conf(py)?))?;
@@ -171,8 +162,8 @@ fn ylabel(text: impl Into<String>, conf: LabelConfig) -> PyResult<()>{
 
 
 #[derive(Debug, Clone, Copy)]
-struct TickConfig{
-    fontsize: usize,
+pub struct TickConfig{
+   pub  fontsize: usize,
 }
 
 impl Default for TickConfig{
@@ -189,7 +180,7 @@ impl TickConfig{
     }
 }
 
-fn xticks(conf: TickConfig) -> PyResult<()>{
+pub fn xticks(conf: TickConfig) -> PyResult<()>{
     Python::with_gil(|py| {
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         plt.getattr("xticks")?.call((), Some(conf.tick_conf(py)?))?;
@@ -197,7 +188,7 @@ fn xticks(conf: TickConfig) -> PyResult<()>{
     })
 }
 
-fn yticks(conf: TickConfig) -> PyResult<()>{
+pub fn yticks(conf: TickConfig) -> PyResult<()>{
     Python::with_gil(|py| {
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         plt.getattr("yticks")?.call((), Some(conf.tick_conf(py)?))?;
@@ -207,8 +198,8 @@ fn yticks(conf: TickConfig) -> PyResult<()>{
 
 
 #[derive(Debug, Clone, Copy)]
-struct FigConf{
-    id: usize,
+pub struct FigConf{
+    pub id: usize,
 }
 
 impl Default for FigConf{
@@ -225,7 +216,7 @@ impl FigConf{
     }
 }
 
-fn figure(conf: FigConf) -> PyResult<()>{
+pub fn figure(conf: FigConf) -> PyResult<()>{
     Python::with_gil(|py|{
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         plt.getattr("figure")?.call((), Some(conf.fig_conf(py)?))?;
@@ -235,12 +226,12 @@ fn figure(conf: FigConf) -> PyResult<()>{
 
 
 #[derive(Debug, Clone, Copy)]
-struct PlotSize{
-    left: f64,
-    right: f64,
-    top: f64,
-    bottom: f64,
-    autosize: bool
+pub struct PlotSize{
+    pub left: f64,
+    pub right: f64,
+    pub top: f64,
+    pub bottom: f64,
+    pub autosize: bool
 }
 
 impl Default for PlotSize{
@@ -266,7 +257,7 @@ impl PlotSize{
     }
 }
 
-fn plot_size(conf: PlotSize) -> PyResult<()>{
+pub fn plot_size(conf: PlotSize) -> PyResult<()>{
     Python::with_gil(|py| {
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         if conf.autosize {
@@ -279,7 +270,7 @@ fn plot_size(conf: PlotSize) -> PyResult<()>{
     })
 }
 
-fn xscale(log: impl Into<String>) -> PyResult<()>{
+pub fn xscale(log: impl Into<String>) -> PyResult<()>{
     Python::with_gil(|py| {
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         plt.getattr("xscale")?.call1((log.into(), ))?;
@@ -287,7 +278,7 @@ fn xscale(log: impl Into<String>) -> PyResult<()>{
     })
 }
 
-fn yscale(log: impl Into<String>) -> PyResult<()>{
+pub fn yscale(log: impl Into<String>) -> PyResult<()>{
     Python::with_gil(|py| {
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         plt.getattr("yscale")?.call1((log.into(), ))?;
@@ -295,15 +286,58 @@ fn yscale(log: impl Into<String>) -> PyResult<()>{
     })
 }
 
-fn use_latex(usar: bool) -> PyResult<()>{
+pub fn limits(bottom: Option<f64>, top: Option<f64>, left: Option<f64>, right: Option<f64>) -> PyResult<()>{
+    Python::with_gil(|py| {
+        let plt = PyModule::import(py, "matplotlib.pyplot")?;
+        plt.getattr("xlim")?.call1((left, right))?;
+        plt.getattr("ylim")?.call1((bottom, top))?;
+        Ok(())
+    })
+}
+
+pub fn use_latex(usar: bool) -> PyResult<()>{
     Python::with_gil(|py|{ 
     let plt = PyModule::import(py, "matplotlib.pyplot")?;
-    plt.getattr("rc")?.call(("text", ), Some([("usetex", usar)].into_py_dict(py)))?;
+    plt.getattr("rcParams")?.set_item("text.usetex", usar)?;
     Ok(())
 })
 }
 
-fn add_latex_code(code: String) -> PyResult<()>{
+pub fn save(path: &str) -> PyResult<()>{
+    show_conf()?;
+    Python::with_gil(|py|{
+    let plt = PyModule::import(py, "matplotlib.pyplot")?;
+    plt.getattr("savefig")?.call((path, ), Some([("dpi", "figure"),].into_py_dict(py)))?;
+    Ok(())
+    })
+}
+
+pub fn show() -> PyResult<()>{
+    show_conf()?;
+    Python::with_gil(|py| {
+        let plt = PyModule::import(py, "matplotlib.pyplot")?;
+        println!("{:?}", plt.getattr("rcParams")?.get_item("text.usetex")?);
+        plt.getattr("show")?.call0()?;
+        Ok(())
+    })
+}
+fn show_conf() -> PyResult<()>{
+    Python::with_gil(|py|{ 
+    let loc = PyModule::import(py, "locale")?;
+    loc.getattr("setlocale")?.call1((loc.getattr("LC_ALL")?, ""))?;
+    
+    let plt = PyModule::import(py, "matplotlib.pyplot")?;
+    // plt.getattr("rcParams")?.set_item(ç"text.usetex", true)?;
+    let pyd = PyDict::new(py);
+    pyd.set_item("useLocale", true)?;
+    pyd.set_item("style", "sci")?;
+    pyd.set_item("scilimits", (-2, 2))?;
+    plt.getattr("ticklabel_format")?.call((), Some(pyd))?; 
+    Ok(())
+})
+}
+
+pub fn add_latex_code(code: String) -> PyResult<()>{
     Python::with_gil(|py| {
         let plt = PyModule::import(py, "matplotlib.pyplot")?;
         plt.getattr("rc")?.call(("text.latex", ), Some([("preamble", String::from("\n").push_str(code.as_ref()))].into_py_dict(py)))?;
@@ -311,7 +345,7 @@ fn add_latex_code(code: String) -> PyResult<()>{
     })
 }
 
-fn execute_python(code: &str) -> PyResult<()>{
+pub fn execute_python(code: &str) -> PyResult<()>{
     Python::with_gil(|py| {
         py.eval(code, None, None)?;
         Ok(())
