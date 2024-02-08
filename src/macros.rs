@@ -1,5 +1,5 @@
 /// The measure macro provides a very intuitive way for creating new measures.
-/// 
+///
 /// It has five primary expresions available:
 /// - Vector of values and vector of errors, one for each value.
 /// - Vector of values and one error for all values.
@@ -99,6 +99,44 @@ macro_rules! impl_op {
             type Output = Measure;
 
             fn add(self, other: $from) -> Self::Output {
+                if self.len() == 1 {
+                    return Measure {
+                        value: other
+                            .value
+                            .iter()
+                            .map(|oval| self.value[0] + oval)
+                            .collect(),
+                        error: other
+                            .error
+                            .iter()
+                            .map(|oerr| (self.error[0].powi(2) + oerr.powi(2)).sqrt())
+                            .collect(),
+                        style: Style::PM,
+                    };
+                }
+                if other.len() == 1 {
+                    return Measure {
+                        value: self
+                            .value
+                            .iter()
+                            .map(|sval| sval + other.value[0])
+                            .collect(),
+                        error: self
+                            .error
+                            .iter()
+                            .map(|serr| (serr.powi(2) + other.error[0].powi(2)).sqrt())
+                            .collect(),
+                        style: Style::PM,
+                    };
+                }
+
+                assert_eq!(
+                    self.len(),
+                    other.len(),
+                    "Measures lengths must be equals, obtained {} and {}.",
+                    self.len(),
+                    other.len()
+                );
                 Measure {
                     value: self
                         .value
@@ -121,6 +159,44 @@ macro_rules! impl_op {
             type Output = Measure;
 
             fn sub(self, other: $from) -> Self::Output {
+                if self.len() == 1 {
+                    return Measure {
+                        value: other
+                            .value
+                            .iter()
+                            .map(|oval| self.value[0] - oval)
+                            .collect(),
+                        error: other
+                            .error
+                            .iter()
+                            .map(|oerr| (self.error[0].powi(2) + oerr.powi(2)).sqrt())
+                            .collect(),
+                        style: Style::PM,
+                    };
+                }
+                if other.len() == 1 {
+                    return Measure {
+                        value: self
+                            .value
+                            .iter()
+                            .map(|sval| sval - other.value[0])
+                            .collect(),
+                        error: self
+                            .error
+                            .iter()
+                            .map(|serr| (serr.powi(2) + other.error[0].powi(2)).sqrt())
+                            .collect(),
+                        style: Style::PM,
+                    };
+                }
+
+                assert_eq!(
+                    self.len(),
+                    other.len(),
+                    "Measures lengths must be equals, obtained {} and {}.",
+                    self.len(),
+                    other.len()
+                );
                 Measure {
                     value: self
                         .value
@@ -143,6 +219,48 @@ macro_rules! impl_op {
             type Output = Measure;
 
             fn mul(self, other: $from) -> Self::Output {
+                if self.len() == 1 {
+                    return Measure {
+                        value: other
+                            .value
+                            .iter()
+                            .map(|oval| self.value[0] * oval)
+                            .collect(),
+                        error: other
+                            .iter()
+                            .map(|(oval, oerr)| {
+                                ((oval * self.error[0]).powi(2) + (oerr * self.value[0]).powi(2))
+                                    .sqrt()
+                            })
+                            .collect(),
+                        style: Style::PM,
+                    };
+                }
+                if other.len() == 1 {
+                    return Measure {
+                        value: self
+                            .value
+                            .iter()
+                            .map(|sval| sval * other.value[0])
+                            .collect(),
+                        error: self
+                            .iter()
+                            .map(|(sval, serr)| {
+                                ((other.value[0] * serr).powi(2) + (sval * other.error[0]).powi(2))
+                                    .sqrt()
+                            })
+                            .collect(),
+                        style: Style::PM,
+                    };
+                }
+
+                assert_eq!(
+                    self.len(),
+                    other.len(),
+                    "Measures lengths must be equals, obtained {} and {}.",
+                    self.len(),
+                    other.len()
+                );
                 Measure {
                     value: self
                         .value
@@ -166,6 +284,50 @@ macro_rules! impl_op {
             type Output = Measure;
 
             fn div(self, other: $from) -> Self::Output {
+                if self.len() == 1 {
+                    return Measure {
+                        value: other
+                            .value
+                            .iter()
+                            .map(|oval| self.value[0] / oval)
+                            .collect(),
+                        error: other
+                            .iter()
+                            .map(|(oval, oerr)| {
+                                ((1.0 / oval * self.error[0]).powi(2)
+                                    + (self.value[0] / oval.powi(2) * oerr.powi(2)))
+                                .sqrt()
+                            })
+                            .collect(),
+                        style: Style::PM,
+                    };
+                }
+                if other.len() == 1 {
+                    return Measure {
+                        value: self
+                            .value
+                            .iter()
+                            .map(|sval| sval / other.value[0])
+                            .collect(),
+                        error: self
+                            .iter()
+                            .map(|(sval, serr)| {
+                                ((1.0 / other.value[0] * serr).powi(2)
+                                    + (sval / other.value[0].powi(2) * other.error[0].powi(2)))
+                                .sqrt()
+                            })
+                            .collect(),
+                        style: Style::PM,
+                    };
+                }
+
+                assert_eq!(
+                    self.len(),
+                    other.len(),
+                    "Measures lengths must be equals, obtained {} and {}.",
+                    self.len(),
+                    other.len()
+                );
                 Measure {
                     value: self
                         .value
