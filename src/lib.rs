@@ -41,5 +41,5 @@ pub use {
     objects::Measure,
     reader::Reader,
     tables::Table,
-    plot::{},
+    plot::*,
 };
