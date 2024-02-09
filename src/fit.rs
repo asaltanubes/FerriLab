@@ -244,7 +244,7 @@ fn wlinear_fit(x: &[f64], y: &[f64], yerr: &[f64]) -> (Measure, Measure) {
 }
 
 // ------------------------- Curve fit -------------------------
-
+#[allow(clippy::too_many_arguments)]
 fn curve_fit<F>(
     model: &F,
     x: &[f64],
