@@ -17,7 +17,7 @@ error propagation. Also a measure can be aproximated to the first significative
 figure of the error.
 
 ```rust
-# use ferrilab::{measure, Measure};
+use ferrilab::{measure, Measure};
 let time = measure!([0.227, 0.312, 0.4019, 0.512], [0.012, 0.023, 0.025, 0.048]);
 let position = measure!([2.425, 3.41515, 5.13545, 7.24524], [0.2, 0.43, 0.544, 0.872]; true);
 let speed = &position / &time; // Using reference allows position and time to still be used.
