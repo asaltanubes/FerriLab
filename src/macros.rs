@@ -470,12 +470,11 @@ macro_rules! impl_op_number {
                     value: measure
                         .value
                         .iter()
-                        .map(|val| val / (self as f64))
+                        .map(|val| (self as f64) / val)
                         .collect(),
                     error: measure
-                        .error
                         .iter()
-                        .map(|err| err / (self as f64).abs())
+                        .map(|(val, err)| (self as f64).abs() * err / val.powi(2))
                         .collect(),
                     style: Style::PM,
                 }

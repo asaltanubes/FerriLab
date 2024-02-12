@@ -1,6 +1,6 @@
 [package]
 name = "ferrilab"
-version = "0.1.0"
+version = "0.1.1"
 description = "Package intended for working with laboratory measures."
 edition = "2021"
 authors = ["Óscar Castro", "Gustavo Gancedo"]
